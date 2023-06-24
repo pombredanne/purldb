@@ -496,6 +496,16 @@ class Package(
         blank=True,
         help_text='A UUID used to identify a group of related Packages'
     )
+    package_sets = ArrayField(
+        base_field=models.UUIDField(
+            blank=True,
+            null=True,
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=_('A list of package_set UUIDs that identifies which groups this Package is related to'),
+    )
 
     package_content = models.IntegerField(
         null=True,
