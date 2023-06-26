@@ -42,6 +42,7 @@ def get_rows(workbook, sheet_name):
         source_name = row[inventory_column_indices['source_name']].value
         source_version = row[inventory_column_indices['source_version']].value
         source_purl = row[inventory_column_indices['source_purl']].value
+        source_subpath = row[inventory_column_indices['source_subpath']].value
         reportable = {
             'purl': purl,
             'source_download_url': source_download_url,
@@ -50,6 +51,7 @@ def get_rows(workbook, sheet_name):
             'source_name': source_name,
             'source_version': source_version,
             'source_purl': source_purl,
+            'source_subpath': source_subpath,
         }
         rows.append(reportable)
     return rows
@@ -132,15 +134,27 @@ class Command(VerboseCommand):
                 source_package.save()
 
             # Create new Package from the source_ fields
-            package = Package.objects.create(
+            package = Package.objects.get_or_none(
                 type=row['source_type'],
                 namespace=row['source_namespace'],
                 name=row['source_name'],
                 version=row['source_version'],
+                subpath=row['source_subpath'],
                 download_url=row['source_download_url'],
-                package_set=package_set,
                 package_content=PackageContentType.SOURCE_REPO,
             )
-            if package:
-                add_package_to_scan_queue(package)
-                print(f'\tCreated source repo package {source_purl} for {purl}')
+            if not package:
+                package = Package.objects.create(
+                    type=row['source_type'],
+                    namespace=row['source_namespace'],
+                    name=row['source_name'],
+                    version=row['source_version'],
+                    subpath=row['source_subpath'],
+                    download_url=row['source_download_url'],
+                    package_content=PackageContentType.SOURCE_REPO,
+                )
+                if package:
+                    add_package_to_scan_queue(package)
+                    print(f'\tCreated source repo package {source_purl} for {purl}')
+            else:
+                print(f'\tNot creating Package {source_purl} as it already exists in the database')
