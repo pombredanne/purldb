@@ -491,20 +491,9 @@ class Package(
         blank=True,
         help_text='Indexing errors messages. When present this means the indexing has failed.',
     )
-    package_set = models.UUIDField(
-        null=True,
-        blank=True,
-        help_text='A UUID used to identify a group of related Packages'
-    )
-    package_sets = ArrayField(
-        base_field=models.UUIDField(
-            blank=True,
-            null=True,
-        ),
-        default=list,
-        blank=True,
-        null=True,
-        help_text=_('A list of package_set UUIDs that identifies which groups this Package is related to'),
+    package_set = models.ForeignKey(
+        'PackageSet',
+        related_name='packages',
     )
 
     package_content = models.IntegerField(
@@ -990,3 +979,31 @@ def make_relationship(
         to_package=to_package,
         relationship=relationship,
     )
+
+
+class PackageSet(PackageURLMixin, models.Model):
+    """
+    A group of related Packages.
+
+    This consists of Package URL field attributes as well as:
+    - uuid
+    - source_repo (the Package that represents the source of Packages in this set)
+    """
+
+    uuid = models.UUIDField(
+        verbose_name=_("UUID"),
+        default=uuid.uuid4,
+        unique=True,
+        editable=False
+    )
+
+    source_repo = models.ForeignKey(
+        Package,
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+
+    def __str__(self):
+        return (
+            f"{self.uuid} represents the set of packages related to {self.source_repo.purl}."
+        )
