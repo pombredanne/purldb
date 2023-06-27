@@ -188,7 +188,7 @@ def _update_package_checksums(package, scan_object):
     return updated
 
 
-def index_package_files(package, scan_data):
+def index_package_files(package, scan_data, overwrite_fields=False):
     """
     Index scan data for `package` Package.
 
@@ -216,7 +216,7 @@ def index_package_files(package, scan_data):
 
             # TODO: Determine what extra_data to keep
 
-            r = Resource(
+            resource_data = dict(
                 package=package,
                 path=path,
                 name=name,
@@ -235,7 +235,11 @@ def index_package_files(package, scan_data):
                 is_key_file=is_key_file,
                 is_file=is_file,
             )
-            r.set_scan_results(resource, save=True)
+            r, r_created = Resource.objects.get_or_create(
+                **resource_data
+            )
+            if r_created or overwrite_fields:
+                r.set_scan_results(resource, save=True)
 
             if sha1:
                 _, _ = ExactFileIndex.index(
